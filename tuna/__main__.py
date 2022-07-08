@@ -71,13 +71,13 @@ class ScreenUtils:
 
 
 class BiteTrigger:
-    # TRIGGER_DIST_LOW = 7
-    # TRIGGER_DIST_HIGH = 18
     TRIGGER_DIST_LOW = 11
     TRIGGER_DIST_HIGH = 25
 
     def __init__(self) -> None:
+        # bobber location history
         self.points = deque(maxlen=5)
+        # distance between one bobber location and average before it, list
         self.dists = deque(maxlen=3)
 
     @staticmethod
@@ -99,7 +99,12 @@ class BiteTrigger:
         return sx, sy
 
     def check_dists(self):
-        # if sum of dist in threshold, return True
+        """every time a new bobber location is added, it's distance between the
+        average of last few bobber locations is added to `dists`. If the sum of
+        last few `dists` falls within predefined range, then we have a bite.
+
+        """
+
         s_dist = sum(self.dists)
         print(s_dist)
         if s_dist > self.TRIGGER_DIST_LOW and s_dist < self.TRIGGER_DIST_HIGH:
@@ -118,8 +123,8 @@ class BiteTrigger:
 class BobberFinder:
     CAST_TIMEOUT = 23.0
 
-    def __init__(self) -> None:
-        self.cascade = cv.CascadeClassifier("dist/cascade.xml")
+    def __init__(self, cascade_model_path="model/cascade.xml") -> None:
+        self.cascade = cv.CascadeClassifier(cascade_model_path)
         self.screen = ScreenUtils()
 
     @staticmethod
@@ -191,16 +196,13 @@ class KeyboardSimulator:
 
 
 class FishingStateMachine:
-    BOBBER_SCAN_INTERVAL = 100
-    BOBBER_TRIGGER_DIST = 10
-
     def __init__(self, *, key_cast_pole):
         self.signaled = False
         self.state = "START"
         self.key_cast_pole = key_cast_pole
         self.mouse = MouseSimulator()
         self.keyboard = KeyboardSimulator()
-        self.bobber_finder = BobberFinder()
+        self.bobber_finder = BobberFinder(cascade_model_path="model/cascade/cascade.xml")
 
     def s_START(self):
         return "CAST_POLE", None
